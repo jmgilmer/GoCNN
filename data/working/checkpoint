@@ -1,2 +1,0 @@
-model_checkpoint_path: "/home/justin/Programming/GoAI/MovePredictionCNN/data/working/board_eval_cnn_5layer.ckpt"
-all_model_checkpoint_paths: "/home/justin/Programming/GoAI/MovePredictionCNN/data/working/board_eval_cnn_5layer.ckpt"
