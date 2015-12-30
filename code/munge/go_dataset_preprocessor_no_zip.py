@@ -61,11 +61,13 @@ def addToDataFile( datafile, color, move, goBoard, black_ownership, white_owners
     datafile.write(chr(row)) # write the move
     datafile.write(chr(col))
 
+
     if OWNERSHIP_TARGET:
         if color == 'b':
             ownership = black_ownership
         elif color =='w':
             ownership = white_ownership
+
         flattened_targets = [ownership[i][j] for i in xrange(BOARD_SIZE) for j in xrange(BOARD_SIZE)]
         num_bytes = bit_writer.write_sequence(flattened_targets, datafile)
 
@@ -171,7 +173,7 @@ def munge_all_sgfs( source_dir_path, output_dir_path):
 
 if __name__ == '__main__':
     source_dir_path = "/home/justin/Programming/GoAI/Completing_Go_Games/pro_games/"
-    output_dir_path = "/home/justin/Programming/GoAI/MovePredictionCNN/data/input/ownership_samples_all"
+    output_dir_path = "/home/justin/Programming/GoAI/MovePredictionCNN/data/input/test/"
     munge_all_sgfs(source_dir_path, output_dir_path)
     print "Done munging"
  
