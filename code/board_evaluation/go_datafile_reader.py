@@ -109,6 +109,7 @@ class GoDatafileReader:
 		assert(len(self.datafiles) != 0)
 		self.num_epochs = 0
 		self.index_of_file = 0
+		self.move_index = 0
 		self.board_size = board_size
 		self.samples_read = 0
 		self.current_file = open(self.datafiles[self.index_of_file], "rb")
@@ -120,7 +121,7 @@ class GoDatafileReader:
 			self.index_of_file = 0
 		self.current_file.close()
 		self.current_file = open(self.datafiles[self.index_of_file], "rb")
-		#print "Open file %d: %s" %(self.index_of_file, self.datafiles[self.index_of_file])
+		self.move_index = 0
 
 	#read the next feature cube from the binary file. Note this will increment the position in the file.
 	#This function assumes the bytes 'GO' and the target bytes have already been read
@@ -149,6 +150,7 @@ class GoDatafileReader:
 		#final_state = final_state.reshape((19,19))
 
 		feature_cube = self._get_feature_cube()
+		self.move_index+=1
 		return final_state, (row, col), feature_cube
 
 class BatchAggregator:

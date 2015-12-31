@@ -15,12 +15,12 @@ def conv2d(x, W):
   return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 def place_holders():
-	x = tf.placeholder("float", shape=[None, 19, 19 , 8])
-	ownership = tf.placeholder("float", shape=[None, 19*19])
+	x = tf.placeholder("float", shape=[None, BOARD_SIZE, BOARD_SIZE , 8])
+	ownership = tf.placeholder("float", shape=[None, BOARD_SIZE**2])
 	return x, ownership
 def model(x):
 
-	x_board = tf.reshape(x, [-1, 19, 19, 8])
+	x_board = tf.reshape(x, [-1, BOARD_SIZE, BOARD_SIZE, 8])
 	W_conv1 = weight_variable([5, 5, 8, 64])
 	b_conv1 = bias_variable([64])
 	h_conv1 = tf.nn.relu(conv2d(x_board, W_conv1) + b_conv1)
@@ -46,11 +46,11 @@ def model(x):
 	b_convm5 = bias_variable([1])
 	h_convm5 = conv2d(h_conv5, W_convm5) + b_convm5
 	 
-	pred_ownership = tf.sigmoid(tf.reshape(h_convm5, [-1, 19*19]))
+	pred_ownership = tf.sigmoid(tf.reshape(h_convm5, [-1, BOARD_SIZE**2]))
 	return pred_ownership
 
 def loss_function(y_pred, y_true):
-	loss = tf.reduce_sum(tf.pow(y_pred - y_true, 2))
+	loss = tf.reduce_mean(tf.pow(y_pred - y_true, 2))
 	return loss
 
 def train_step(loss):
