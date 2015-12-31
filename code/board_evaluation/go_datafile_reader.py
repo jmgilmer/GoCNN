@@ -36,7 +36,8 @@ class GoDatafileReader:
 			self.num_epochs+=1
 			self.index_of_file = 0
 		self.current_file.close()
-		self.current_file = open(self.datafiles[self.index_of_file])
+		self.current_file = open(self.datafiles[self.index_of_file], "rb")
+		#print "Open file %d: %s" %(self.index_of_file, self.datafiles[self.index_of_file])
 
 	#read the next feature cube from the binary file. Note this will increment the position in the file.
 	#This function assumes the bytes 'GO' and the target bytes have already been read
@@ -53,6 +54,7 @@ class GoDatafileReader:
 	def read_sample(self):
 		go_byte = self.current_file.read(2)
 		if len(go_byte) == 0: #at the end of the file, open next one in queue
+			#print "END OF FILE!!!!"
 			self.open_next_file()
 			go_byte = self.current_file.read(2)
 		assert(go_byte == "GO")
@@ -73,7 +75,10 @@ class BatchAggregator:
 		self.mega_batch_y = []
 		self.mega_batch_size = mega_batch_size
 		self.index_in_mega_batch = mega_batch_size
+
 	def init_mega_batch(self):
+		self.mega_batch_x = []
+		self.mega_batch_y = []
 		for i in xrange(self.mega_batch_size):
 			final_state, _, feature_cube = self.go_file_reader.read_sample()
 			self.mega_batch_x.append(feature_cube)
@@ -88,6 +93,7 @@ class BatchAggregator:
 			raise ValueError('batch_size cannot be bigger than mega_batch_size')
 		if self.index_in_mega_batch + batch_size > self.mega_batch_size:
 			print "Got to end of mega batch, reinitializing..."
+			print "Epoch = %d" %self.go_file_reader.num_epochs
 			self.init_mega_batch()
 		x_list = self.mega_batch_x[self.index_in_mega_batch:self.index_in_mega_batch+batch_size]
 		y_list = self.mega_batch_y[self.index_in_mega_batch:self.index_in_mega_batch+batch_size]
