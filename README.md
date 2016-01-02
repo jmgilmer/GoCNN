@@ -14,6 +14,7 @@ The features of the model consist of 8 feature planes. 3 planes indicate player 
 ## Results
 
 The model achieves 80% test set accuracy after ~4 hours of training on a GTX 970 card. After 12 hours of training accuracy is about 80.5%. Accuracy on the training set is around 81% suggesting we are currently under-fitting. Accuracy greatly varies based on far into the game it is.
+
 ![alt-text](http://i.imgur.com/za5fKov.png?1)
 
 For most games the model achieves > 96% accuracy at the end of the game, however sometimes the model will incorrectly assess the status of some groups. 
