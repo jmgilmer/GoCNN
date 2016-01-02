@@ -28,7 +28,8 @@ Current API for the code isn't great, you need to set data_dir variables and oth
 4. Run train.ipynb (requires tensorflow).
 
 ##Third party libraries used
-* Modified some code from [kgsgo-dataset-preprocessor](https://github.com/hughperkins/kgsgo-dataset-preprocessor)
+* Modified some code from [kgsgo-dataset-preprocessor](https://github.com/hughperkins/kgsgo-dataset-preprocessor) to do data munging.
+* [gomill](https://github.com/mattheww/gomill)
 * [gnugo](https://www.gnu.org/software/gnugo/)
 * [tensorflow](https://www.tensorflow.org/)
 
@@ -36,7 +37,7 @@ Current API for the code isn't great, you need to set data_dir variables and oth
 ##Todo
 
 1. Use GoGui for better visualization of the model.
-2. Streamline the munging phase so it is easier to replicate on new machines.
+2. Streamline the install and munging phase so it is easier to replicate on new machines. Currently you will have to fight a lot of dependencies from a fresh clone.
 3. Find work around for the issue where GNU-go sometimes gets stuck in infinite loop when removing dead stones (currently I have to delete the bad sgf file and restart go_dataset_preprocessor.py). 
 4. Try additional features such as previous moves, turns since move was played.
 5. Try different size model architectures.
