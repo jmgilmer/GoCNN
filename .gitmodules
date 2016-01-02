@@ -1,6 +1,0 @@
-[submodule "gomill"]
-	path = gomill
-	url = https://github.com/mattheww/gomill.git
-[submodule "kgsgo-dataset-preprocessor"]
-	path = kgsgo-dataset-preprocessor
-	url = https://github.com/hughperkins/kgsgo-dataset-preprocessor
