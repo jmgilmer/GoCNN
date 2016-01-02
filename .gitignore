@@ -1,5 +1,9 @@
 *.dat
 *.pyc
+.gitignore~
 .ipynb_checkpoints
 *.ckpt
 checkpoint
+go_preprocessor/
+gomill/
+thirdparty/
