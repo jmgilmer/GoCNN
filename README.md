@@ -21,6 +21,7 @@ For most games the model achieves > 96% accuracy at the end of the game. Note th
 
 The model is incredibly fun to visualize with gogui. Because the model has to make a prediction for all 361 board spaces,
 we get a more detailed picture of what the model's understanding of the game is than if the model was just predicting the next move.
+
 ![alt-text](http://i.imgur.com/pJnsdty.png)
 
 Above is the model's prediction halfway through a game, w has just played G13. The color of each square indicates which player the model believes will occupy that square at the end of the game. The size of the square indicates how confident the model is about that square. It has correctly determined the status of the black stones at B11 and the white stones at D4. It is unsure (as am I) as to who will occupy the top side of the board as well as the area around N3.
@@ -31,6 +32,7 @@ It is interesting to see what sort of game knowledge the model as learned. As a 
 
 ## Future Improvements to the Model
 There are a lot of potential ways to improve the model. Current features are very minimal, only containing liberty information and ko information. The following additional features should make the model much more predictive, in particular with life and death situations:
+
 1. Locations of recent moves
 2. Age of stones
 
@@ -46,6 +48,7 @@ To fix these issues I propose internal pooling layers where one takes a max pool
 ##Usage
 
 **Training**
+
 Current API for the code isn't great, you need to set data_dir variables and other flags within several .py files. Basic pipeline is the following:
 1. Create a directory of .sgf files you want to train on (I used the [Go4Go dataset](http://www.go4go.net/go/)).
 2. Run go_dataset_preprocessor.py, (first set the source and output dirs in main). This step requires [gnugo](https://www.gnu.org/software/gnugo/), which we need in order to remove dead stones and determine the final board position. **Note maybe 1 in 10000 games gnugo gets stuck in an infinite loop**. If so kill the process, remove the bad sgf file and restart the .py file, the .py file will skip over files already processed. This phase takes a while as gnugo is slow, maybe 5hours to process 10000 files. The output of each .sgf file is a binary .dat file containing board features and targets.
@@ -53,6 +56,7 @@ Current API for the code isn't great, you need to set data_dir variables and oth
 4. Run train.ipynb (requires tensorflow).
 
 **Visualization**
+
 For visualization see the README under code/visualiation. You can use a saved checkpoint of the model which is located in data/working, also a single sgf file which is located in data/sgf_files.
 ##Third party libraries/software used
 * Modified some code from [kgsgo-dataset-preprocessor](https://github.com/hughperkins/kgsgo-dataset-preprocessor) to do data munging.
