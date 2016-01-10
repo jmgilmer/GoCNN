@@ -1,3 +1,7 @@
+#this file contains methods with call gnugo to finish games from sgf files (remove dead stones)
+#after removing dead stones we can easily determine final board ownership
+
+
 import subprocess
 import re
 import os
@@ -8,8 +12,15 @@ import sys
 sys.path.append("/home/justin/Programming/GoAI/kgsgo-dataset-preprocessor")
 import GoBoard
 
+#gnugo will write the finished game to TEMP_FILE, after which we can open this file
+#and parse the results.
+#TODO: allow for written files to be saved for faster iteration. Currently if we wish to add new features
+#we have to redo this step, which is very slow.
 TEMP_FILE = "/tmp/temp_gnu_output.sgfc"
 
+#sgf_filepath - str, path to the sgf file we need to complete
+#gnugo will write the resutls to dest_file
+#returns True if successful and False if something went wrong
 def finish_sgf(sgf_filepath, dest_file = TEMP_FILE, BOARD_SIZE = 19, difference_treshold = 6, year_lowerbound = 0):
 	dest_file = TEMP_FILE
 
@@ -18,6 +29,9 @@ def finish_sgf(sgf_filepath, dest_file = TEMP_FILE, BOARD_SIZE = 19, difference_
 	sgf_file.close()
 
 	move_count = contents.count(";")
+
+	#I added this to speed up the process. Many files in the dataset were incomplete games, even though
+	#the final score was recorded. gnugo would take a long time to finish these incomplete games.
 	if move_count < 220:
 		print "Too few moves: %s" %sgf_filepath
 		return False
@@ -25,6 +39,8 @@ def finish_sgf(sgf_filepath, dest_file = TEMP_FILE, BOARD_SIZE = 19, difference_
 	if contents.find( 'SZ[%d]' %BOARD_SIZE ) < 0:
 		print( 'not %dx%d, skipping: %s' %(BOARD_SIZE, BOARD_SIZE, sgf_filepath))
 		return False
+
+	#we first determine the recorded score in the sgf file, this can be compared with what gnugo determines the score to be
 	match_str = r'RE\[([a-zA-Z0-9_\+\.]+)\]'
 	m = re.search(match_str,contents)
 	if m:
@@ -44,6 +60,7 @@ def finish_sgf(sgf_filepath, dest_file = TEMP_FILE, BOARD_SIZE = 19, difference_
 		print "Couldn't find result, skipping: %s" %sgf_filepath
 		return False
 
+	#check the date of the game and skip if it is too old
 	match_str = r"DT\[([0-9]+)"
 	m = re.search(match_str,contents)
 	if m:
@@ -52,11 +69,10 @@ def finish_sgf(sgf_filepath, dest_file = TEMP_FILE, BOARD_SIZE = 19, difference_
 			print "Game is too old: %s" %sgf_filepath
 			return False
 
-	print "Reading from: %s" %sgf_filepath
-	print "Writing to: %s" %dest_file
+	#we call gnugo with the appropriate flags to finish the game. gnugo will write the results to dest_file
 	p = subprocess.Popen(["gnugo", "-l", sgf_filepath, "--outfile", dest_file, \
 			"--score", "aftermath", "--capture-all-dead", "--chinese-rules"], stdout = subprocess.PIPE)
-	output, err = p.communicate()
+	output, err = p.communicate() #gnugo will print the final score, we check this with whats written in the sgffile
 	m = re.search(r"([A-Za-z]+) wins by ([0-9\.]+) points", output)
 	if m is None:
 		return False
@@ -65,13 +81,15 @@ def finish_sgf(sgf_filepath, dest_file = TEMP_FILE, BOARD_SIZE = 19, difference_
 	if winner == "White":
 		gnu_score*=-1
 
-	print score, gnu_score, winner
 	if np.abs(score - gnu_score) > difference_treshold:
 		print "GNU messed up finishing this game... removing %s" %dest_file
 		os.remove(dest_file)
 		return False
 	return True
 
+#gnu_sgf_outputfile - str, filepath to the file gnugo output
+#we parse this file and get the final state of the board from it. Seki positions both groups are considered alive
+#and we randomly assign the spaces between seki groups
 def get_final_ownership(gnu_sgf_outputfile, BOARD_SIZE = 19):
     sgffile = open(gnu_sgf_outputfile, 'r')
     sgfContents = sgffile.read()
@@ -115,6 +133,7 @@ def finish_sgf_and_get_ownership(sgf_filepath, BOARD_SIZE = 19, difference_tresh
 	black_ownership, white_ownership = get_final_ownership(TEMP_FILE)
 	return black_ownership, white_ownership
 
+#this method was used for testing purposes only, the main method will call finish_sgf_and_get_ownership
 def traverse_directory( source_dir_path, dest_dir_path):
 	file_count = 0
 	for subdir, dirs, files in os.walk(source_dir_path):

@@ -2,8 +2,7 @@
 *.pyc
 .gitignore~
 .ipynb_checkpoints
-*.ckpt
+*.log
+
+future/
 checkpoint
-go_preprocessor/
-gomill/
-thirdparty/
