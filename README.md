@@ -19,7 +19,7 @@ The model achieves 80% test set accuracy after ~4 hours of training on a GTX 970
 
 For most games the model achieves > 96% accuracy at the end of the game. Note that accuracy is measured the average over all 361 spaces, which include neutral spaces that may exist between two live groups, these spaces were randomly assigned when gnugo finished the games and so it would be unreasonable to expect 100% accuracy even at the last move. 
 
-The model is incredibly fun to visualize with gogui. Because the model has to make a prediction for all 361 board spaces,
+It is a lot of fun to visualize the model with gogui. Because the model has to make a prediction for all 361 board spaces,
 we get a more detailed picture of what the model's understanding of the game is than if the model was just predicting the next move.
 
 ![alt-text](http://i.imgur.com/pJnsdty.png)
@@ -39,8 +39,10 @@ There are a lot of potential ways to improve the model. Current features are ver
 It is unclear though whether or not previous move locations is a good idea if the model is to be used in a go engine, but it should certainly help improve accuracy.
 
 **Chain Pooling**
-One interesting tweak I would like to try is what I call "chain pooling". To motivation chain pooling, consider the game below (black has just played a sacrificial stone at T11):
+One interesting tweak I would like to try is what I call "chain pooling". To motivate chain pooling, consider the game below (black has just played a sacrificial stone at T11):
+
 ![alt-text](http://i.imgur.com/K06c91S.png)
+
 Note the connected black stones at G16. The model is confident (and correct) that the upper part of the group will live at G18 and G17, yet it is unsure what will happen to G16, H16, and G15. However, even beginner Go players will agree that all stones in a connected group should share the same fate. As another example look at the white stones around S9. It would make sense to encourage the model to make the same predictions about connected stones, it would also make sense for the model to have the same internal representation for connected stones in the intermediate layers. 
 
 To fix these issues I propose internal pooling layers where one takes a max pool along connected groups of stones. This is a little more complicated than traditional max pooling because the **shape of the max pools depends on the input**. I believe the resulting model space should be differentiable, it's more of a question of how to implement this computationally. 
@@ -50,6 +52,7 @@ To fix these issues I propose internal pooling layers where one takes a max pool
 **Training**
 
 Current API for the code isn't great, you need to set data_dir variables and other flags within several .py files. Basic pipeline is the following:
+
 1. Create a directory of .sgf files you want to train on (I used the [Go4Go dataset](http://www.go4go.net/go/)).
 2. Run go_dataset_preprocessor.py, (first set the source and output dirs in main). This step requires [gnugo](https://www.gnu.org/software/gnugo/), which we need in order to remove dead stones and determine the final board position. **Note maybe 1 in 10000 games gnugo gets stuck in an infinite loop**. If so kill the process, remove the bad sgf file and restart the .py file, the .py file will skip over files already processed. This phase takes a while as gnugo is slow, maybe 5hours to process 10000 files. The output of each .sgf file is a binary .dat file containing board features and targets.
 3. If desired, split .dat files into train and test folders.
