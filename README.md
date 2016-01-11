@@ -49,6 +49,14 @@ To fix these issues I propose internal pooling layers where one takes a max pool
 
 ##Usage
 
+First install dependencies:
+
+`$pip install gomill`
+
+Download "gogui-1.4.9.zip" and following the install instructions for [gogui](http://sourceforge.net/projects/gogui/files/gogui/1.4.9/)
+
+Install [tensorflow](https://www.tensorflow.org/)
+
 **Training**
 
 Current API for the code isn't great, you need to set data_dir variables and other flags within several .py files. Basic pipeline is the following:

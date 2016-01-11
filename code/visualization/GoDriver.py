@@ -47,7 +47,10 @@ class GoDriver:
                 it = self.sgf_iterator.next()
                 color, move = it.get_move()
 
-        except StopIteration:
+        except StopIteration: #at the end of the file
+            return "pass"
+
+        if move is None:
             return "pass"
 
         self.color_to_move = _swap_color(color)
