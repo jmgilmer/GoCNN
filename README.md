@@ -1,7 +1,7 @@
 
 # Using CNN for Go (Weiqi/Baduk) board evaluation with tensorflow
 
-This is code for training and evaluating a Convolutional Neural Network for board evaluation in Go. This is an ongoing project and I will be adding to it in the coming weeks. The basic idea is motivated from two recent papers which did move prediction by training a network from professional game records ([Clark et. al](http://arxiv.org/abs/1412.3409) and [Maddison et. al](http://arxiv.org/pdf/1412.6564v2.pdf)). In this project instead of predicting the next move given the current board, we instead predict the final state of the board. This is possible due to the nature of the game Go, because pieces do not move during the game, early and midgame board positions are highly predictive of the final ownership. One hope is that a well trained position evaluator can be used in a strong Go playing engine, in particular remove the need for Monte Carlo Tree Search (MTCS) and instead allow for a traditional alpha-beta pruning approach like in the best Chess programs. The model exhibited here would likely perform poorly for such a task (for a number of reasons), but it is still interesting to see what it learned and I hope this work will inspire future projects.
+This is code for training and evaluating a Convolutional Neural Network for board evaluation in Go. This is an ongoing project and I will be adding to it in the coming weeks. The basic idea is motivated from two recent papers which did move prediction by training a network from professional game records ([Clark et. al](http://arxiv.org/abs/1412.3409) and [Maddison et. al](http://arxiv.org/pdf/1412.6564v2.pdf)). In this project instead of predicting the next move given the current board, we instead predict the final state of the board. As a result we obtain a model which is able to estimate territory and identify dead stones and weak groups. One hope is that a well trained position evaluator can be used in a strong Go playing engine, in particular remove the need for Monte Carlo Tree Search (MTCS) and instead allow for a traditional alpha-beta pruning approach like in the best Chess programs. The model exhibited here would likely perform poorly for such a task (for a number of reasons), but it is still interesting to see what it learned and I hope this work will inspire future projects.
 
 ##Current Model
 
@@ -85,6 +85,10 @@ For visualization see the README under code/visualiation. You can use a saved ch
 3. Try additional features such as previous moves, turns since move was played.
 4. Try different size model architectures.
 5. Compare model with existing score evaluation programs.
+
+##License
+
+MIT License 
 
 
 > Written with [StackEdit](https://stackedit.io/).
