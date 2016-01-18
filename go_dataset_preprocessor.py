@@ -22,28 +22,26 @@
 
 from __future__ import absolute_import, division
 
+import argparse
+import json
 import sys,os,time, os.path
 import shutil
-import GoBoard
+from thirdparty import GoBoard
 import signal
 from os import sys, path
-mydir = path.dirname(path.abspath(__file__))
-print( mydir )
-sys.path.append(mydir + '/gomill' )
+#mydir = path.dirname(path.abspath(__file__))
+#print( mydir )
+#sys.path.append(mydir + '/gomill' )
 import gomill
 import gomill.sgf
-import index_processor
 
 import random
 import numpy as np
-import finish_games
-import bit_writer
-
-BOARD_SIZE = 19
-OWNERSHIP_TARGET = True
+from munge import finish_games
+from  munge import bit_writer
 
 
-def addToDataFile( datafile, color, move, goBoard, black_ownership, white_ownership ):
+def addToDataFile( datafile, color, move, goBoard, ownership, black_ownership, white_ownership ):
     #datafile is an open binary file we are writing to
     # color is the color of the next person to move
     # move is the move they decided to make
@@ -72,13 +70,13 @@ def addToDataFile( datafile, color, move, goBoard, black_ownership, white_owners
     datafile.write(chr(col))
 
     #If we are doing ownership, write the final state of the board as sequential bits
-    if OWNERSHIP_TARGET:
+    if ownership:
         if color == 'b':
-            ownership = black_ownership
+            to_move_ownership = black_ownership
         elif color =='w':
-            ownership = white_ownership
+            to_move_ownership = white_ownership
 
-        flattened_targets = [ownership[i][j] for i in xrange(BOARD_SIZE) for j in xrange(BOARD_SIZE)]
+        flattened_targets = [to_move_ownership[i][j] for i in xrange(board_size) for j in xrange(board_size)]
         num_bytes = bit_writer.write_sequence(flattened_targets, datafile)
 
     #The 8 board feature planes are encoded by sequential bytes, one byte per position on the board
@@ -106,17 +104,17 @@ def addToDataFile( datafile, color, move, goBoard, black_ownership, white_owners
             datafile.write( chr(thisbyte) )
 
 #sgfContects - str with the contents of the sgf file to parse
-#sgfFilepath - str, path to the sgf file
+#sgf_file_path - str, path to the sgf file
 #output_file_path - str, path to the output file
 #
 #walk through the sgf file and write the binary samples to output_file_path
-def walkthroughSgf( sgfContents , sgfFilepath, output_file_path):
-    sgf = gomill.sgf.Sgf_game.from_string( sgfContents )
+def walkthroughSgf( sgf_contents , sgf_file_path, sgf_file_name,  output_file_path, completed_dir, board_size, ownership):
+    sgf = gomill.sgf.Sgf_game.from_string( sgf_contents )
     try:
-        if sgf.get_size() != BOARD_SIZE:
-            print ('boardsize not %d, ignoring' %BOARD_SIZE )
+        if sgf.get_size() != board_size:
+            print ('boardsize not %d, ignoring' %board_size )
             return
-        goBoard = GoBoard.GoBoard(BOARD_SIZE)
+        goBoard = GoBoard.GoBoard(board_size)
         if sgf.get_handicap() != None and sgf.get_handicap() != 0:
             print 'handicap not zero, ignoring (' + str( sgf.get_handicap() ) + ')'
             return
@@ -127,14 +125,14 @@ def walkthroughSgf( sgfContents , sgfFilepath, output_file_path):
 
     #here we attempt to use gnugo to finish the game and get the final ownership.
     #we check the score gnugo gives with the score written in the file, if this score is off
-    #by more than difference_treshold then we skip the file. gnugo is often off by 1 because
+    #by more than difference_threshold then we skip the file. gnugo is often off by 1 because
     #of chinese scoring.
     black_ownership, white_ownership = None, None
-    if OWNERSHIP_TARGET:
-        black_ownership, white_ownership = finish_games.finish_sgf_and_get_ownership(sgfFilepath, 
-            BOARD_SIZE, difference_treshold = 6, year_lowerbound = 0) #set year_lowerbound will ignore all games before given year
+    if ownership:
+        black_ownership, white_ownership = finish_games.finish_sgf_and_get_ownership(sgf_file_path, sgf_file_name, completed_dir,
+            board_size, difference_threshold = 6, year_lowerbound = 0) #set year_lowerbound will ignore all games before given year
         if black_ownership is None or white_ownership is None:
-            print "Unable to get final ownership for %s" %sgfFilepath
+            print "Unable to get final ownership for %s" %sgf_file_path
             return
 
     #all samples from this sgf will be written to this file
@@ -144,7 +142,7 @@ def walkthroughSgf( sgfContents , sgfFilepath, output_file_path):
         (color,move) = it.get_move()
         if color != None and move != None:
             (row,col) = move
-            addToDataFile( output_file, color, move, goBoard, black_ownership, white_ownership )
+            addToDataFile( output_file, color, move, goBoard, ownership, black_ownership, white_ownership)
             try:
                 goBoard.applyMove( color, (row,col) )
             except:
@@ -155,50 +153,77 @@ def walkthroughSgf( sgfContents , sgfFilepath, output_file_path):
             moveIdx = moveIdx + 1
     output_file.close()
 
-#sgfFilepath - str, path to the sgf file
-#sgfFilename - str, name of the sgf file (without the entire path)
+#sgf_file_path - str, path to the sgf file
+#sgf_file_name - str, name of the sgf file (without the entire path)
 #output_file_path - str, path to the output file
 #
 #open the sgf file, read the contents and write them to the binary file output_file_path
-def munge_sgf( sgfFilepath, sgfFilename, output_file_path):
-    sgf_file = open( sgfFilepath, 'r' )
+def munge_sgf( sgf_file_path, sgf_file_name, output_file_path, completed_dir, board_size, ownership):
+    sgf_file = open( sgf_file_path, 'r' )
     contents = sgf_file.read()
     sgf_file.close()
 
-    if contents.find( 'SZ[%d]' %BOARD_SIZE ) < 0:
-        print( 'not %dx%d, skipping: %s' %(BOARD_SIZE, BOARD_SIZE, sgfFilepath))
+    if contents.find( 'SZ[%d]' %board_size ) < 0:
+        print( 'not %dx%d, skipping: %s' %(board_size, board_size, sgf_file_path))
     try:
-        walkthroughSgf( contents , sgfFilepath, output_file_path)
+        walkthroughSgf( contents , sgf_file_path, sgf_file_name, output_file_path, completed_dir, board_size, ownership)
     except:
-        print( "Weird exception happened caught for file " + path.abspath( sgfFilepath ) )
+        print( "Weird exception happened caught for file " + path.abspath( sgf_file_path ) )
         print sys.exc_info()[0]
         print "Terminating the munging..."
         raise 
-    #print( sgfFilepath )
+    #print( sgf_file_path )
 
 #recursively traverse the source_dir directory and process every .sgf file in that directory.
-#We ignore all files that are not BOARD_SIZExBOARD_SIZE, and skip handicap games. The GoGod dataset I downloaded
+#We ignore all files that are not board_sizexboard_size, and skip handicap games. The GoGod dataset I downloaded
 #had a few corrupted sgf files, these will be skipped as well. 
-def munge_all_sgfs( source_dir_path, output_dir_path):
+def munge_all_sgfs( input_dir, output_dir, completed_dir, board_size, ownership):
     file_count = 0
-    for subdir, dirs, files in os.walk(source_dir_path):
+    for subdir, dirs, files in os.walk(input_dir):
         for file in files:
             filepath = subdir + os.sep + file
             if file_count % 1000 == 0:
                 print file_count
             if filepath.endswith(".sgf"):
-                output_file_path = output_dir_path + os.sep + file[:-4] + ".dat"
+                output_file_path = output_dir + os.sep + file[:-4] + ".dat"
                 if os.path.isfile(output_file_path):
                     print "File already exists: %s" %output_file_path
                     continue
-                munge_sgf(filepath, file, output_file_path)
+                munge_sgf(filepath, file, output_file_path, completed_dir, board_size, ownership)
                 file_count+=1
     print "There were %d files" %(file_count)
+    if file_count == 0:
+        print "No sgf_files were found in the directory, nothing to do."
+    else:
+        if not os.path.exists(output_dir):
+            print "%s not found, creating it" %output_dir
+            os.mkdir(output_dir)
+        if not os.path.exists(completed_dir):
+            print "%s not found, creating it" %completed_dir
+            os.mkdir(completed_dir)
 
 
 if __name__ == '__main__':
-    source_dir_path = "/home/justin/Programming/GoAI/Completing_Go_Games/pro_games/" #directory with sgf files
-    output_dir_path = "/home/justin/Programming/GoAI/MovePredictionCNN/data/input/train/" #directory to write binary files to
-    munge_all_sgfs(source_dir_path, output_dir_path)
-    print "Done munging"
+    #munge_all_sgfs(source_dir_path, output_dir_path)
  
+    parser = argparse.ArgumentParser()
+
+    #settings for munging
+    parser.add_argument('-i', '--input_dir', dest='input_dir', type=str, default='./data/sgf_files', help='directory containing sgf files as inputk')
+    parser.add_argument('-o', '--output_dir', dest='output_dir', type=str, default='./data/input_samples_all', help='output directory to write processed binary files to')
+    parser.add_argument('-c', '--completed_dir', dest='completed_dir', default='./data/completed_sgf_files', help='directory to save gnugo completed sgf files (with ownership info)')
+    parser.add_argument('-b' '--board_size', dest='board_size', type=int, default=19, help='board size')
+    parser.add_argument('--no_ownership', dest = 'ownership', action='store_false')
+    parser.set_defaults(ownership = True)
+
+    args = parser.parse_args()
+    params = vars(args)
+    print json.dumps(params, indent =2)
+
+    input_dir = params["input_dir"]
+    output_dir = params["output_dir"]
+    completed_dir = params["completed_dir"]
+    board_size = params["board_size"]
+    ownership = params["ownership"]
+
+    munge_all_sgfs(input_dir, output_dir, completed_dir, board_size, ownership)

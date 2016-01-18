@@ -3,6 +3,8 @@
 .gitignore~
 .ipynb_checkpoints
 *.log
+*.sgf
+*.sgfc
 
 future/
 checkpoint
