@@ -1,8 +1,7 @@
 #BoardEvaluator.py
 import tensorflow as tf
 import sys
-sys.path.append("../board_evaluation")
-import model
+from ..board_evaluation import model
 import numpy as np
 
 def _board_to_feature_cube(goBoard, color_to_move):

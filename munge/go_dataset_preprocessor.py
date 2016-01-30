@@ -26,7 +26,7 @@ import argparse
 import json
 import sys,os,time, os.path
 import shutil
-from thirdparty import GoBoard
+from ..thirdparty import GoBoard
 import signal
 from os import sys, path
 #mydir = path.dirname(path.abspath(__file__))
@@ -37,8 +37,8 @@ import gomill.sgf
 
 import random
 import numpy as np
-from munge import finish_games
-from  munge import bit_writer
+from . import finish_games
+from . import bit_writer
 
 
 def addToDataFile( datafile, color, move, goBoard, ownership, black_ownership, white_ownership ):

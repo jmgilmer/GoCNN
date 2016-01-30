@@ -3,23 +3,22 @@
 
 
 import subprocess
-import threading.Timer
+import threading
 import re
 import os
 import numpy as np
 import gomill
 import gomill.sgf
 import sys
-sys.path.append("/home/justin/Programming/GoAI/kgsgo-dataset-preprocessor")
-import GoBoard
+from ..thirdparty import GoBoard
 
 
 
 #sgf_filepath - str, path to the sgf file we need to complete
 #gnugo will write the resutls to dest_file
 #returns True if successful and False if something went wrong
-def finish_sgf(sgf_filepath, dest_file, board_size = 19, difference_threshold = 6, year_lowerbound = 0
-               gnugo_timeout=10):
+def finish_sgf(sgf_filepath, dest_file, board_size=19, difference_threshold=6,
+               year_lowerbound=0, gnugo_timeout=10):
 
 
     sgf_file = open(sgf_filepath, 'r')

@@ -1,5 +1,5 @@
 import tensorflow as tf
-import go_datafile_reader
+from . import go_datafile_reader
 
 #Visual the outputs of the model.
 #Feature_cube: the x input of model, currently assumes first 6 planes are board position features
