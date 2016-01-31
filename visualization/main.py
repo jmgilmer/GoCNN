@@ -15,7 +15,7 @@ import re
 import random
 import numpy as np
 import os
-from GoDriver import GoDriver
+from .GoDriver import GoDriver
 
 MODEL_PATH = "../../data/working/board_eval_cnn_5layer.ckpt"
 

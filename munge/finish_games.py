@@ -3,21 +3,22 @@
 
 
 import subprocess
+import threading
 import re
 import os
 import numpy as np
 import gomill
 import gomill.sgf
 import sys
-sys.path.append("/home/justin/Programming/GoAI/kgsgo-dataset-preprocessor")
-import GoBoard
+from ..thirdparty import GoBoard
 
 
 
 #sgf_filepath - str, path to the sgf file we need to complete
 #gnugo will write the resutls to dest_file
 #returns True if successful and False if something went wrong
-def finish_sgf(sgf_filepath, dest_file, board_size = 19, difference_threshold = 6, year_lowerbound = 0):
+def finish_sgf(sgf_filepath, dest_file, board_size=19, difference_threshold=6,
+               year_lowerbound=0, gnugo_timeout=10):
 
 
     sgf_file = open(sgf_filepath, 'r')
@@ -69,7 +70,12 @@ def finish_sgf(sgf_filepath, dest_file, board_size = 19, difference_threshold = 
     #we call gnugo with the appropriate flags to finish the game. gnugo will write the results to dest_file
     p = subprocess.Popen(["gnugo", "-l", sgf_filepath, "--outfile", dest_file, \
             "--score", "aftermath", "--capture-all-dead", "--chinese-rules"], stdout = subprocess.PIPE)
-    output, err = p.communicate() #gnugo will print the final score, we check this with whats written in the sgffile
+    timer = threading.Timer(gnugo_timeout, p.kill)
+    try:
+        timer.start()
+        output, err = p.communicate() #gnugo will print the final score, we check this with whats written in the sgffile
+    finally:
+        timer.cancel()
     m = re.search(r"([A-Za-z]+) wins by ([0-9\.]+) points", output)
     if m is None:
         return False
