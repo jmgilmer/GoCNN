@@ -22,10 +22,13 @@ letter_coords = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N'
 
 #go from matrix index to board position string e.g. 0,2 -> A3
 def coord_to_str(row, col):
-    return letter_coords[row] + str(col+1)
+    row = (19-1) - row
+    return letter_coords[col] + str(row+1)
 
 def str_to_coord(coord):
-    return (letter_coords.index(coord[0].upper()), int(coord[1:]) - 1 )
+    row = int(coord[1:]) - 1
+    col = letter_coords.index(coord[0].upper())
+    return ( (19-1) - row, col)
 
 #ownership_matrix - [N,N] matrix of floats output from the CNN model
 #Formats a valid response string that can be fed into gogui as response to the 'predict_ownership' command
@@ -76,8 +79,8 @@ def gtp_io():
             color = command[1][0]
             move = command[2]
             if move != 'pass':
-                (row, col) = str_to_coord(move)
-                driver.play(color, (row, col))
+                coord = str_to_coord(move)
+                driver.play(color, coord)
             else:
                 driver.play(color, move)                
             pass
