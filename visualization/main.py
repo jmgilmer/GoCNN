@@ -2,11 +2,8 @@
 
 '''
 This file contains the main loop which communicates to gogui via the Go Text Protocol (gtp) via stdin.
-We start by loading a random sgf file contained in the SGF_DIRECTORY. You can walk through
-the sgf file by clicking the 'make board_evaluator play' button in gogui. Everytime the
-loadsgf command is sent from gogui (Tools -> Analyze Commands in gogui) we load
-a new random sgf from the directory. When the predict ownership method is called
-we return the models board evaluation prediction on the current state of the board.
+When the predict ownership method is called we return the models board evaluation prediction on the
+current state of the board.
 '''
 
 from __future__ import print_function
@@ -19,28 +16,16 @@ from .GoDriver import GoDriver
 
 MODEL_PATH = "/home/tensorflow/src/GoCNN/data/working/board_eval_cnn_5layer.ckpt"
 
-#everytime we reset the board we will load a random game from this directory to view
-SGF_DIRECTORY = "/home/tensorflow/sgf"
-#SGF_DIRECTORY = "../../data/sgf_files" 
 
 N = 19 #size of the board
 letter_coords = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
 
-#sgf_dir - string, directory containing sgf files
-#returns list of strings
-def get_sgf_filelist(sgf_dir):
-    sgf_files = []
-    for subdir, dirs, files in os.walk(SGF_DIRECTORY):
-        for file in files:
-            filepath = subdir + os.sep + file
-            if filepath.endswith(".sgf"):
-                sgf_files.append(filepath)
-    print("Number of sgf files found: %d" %len(sgf_files), file=sys.stderr)
-    return sgf_files
-
 #go from matrix index to board position string e.g. 0,2 -> A3
 def coord_to_str(row, col):
     return letter_coords[row] + str(col+1)
+
+def str_to_coord(coord):
+    return (letter_coords.index(coord[0].upper()), int(coord[1:]) - 1 )
 
 #ownership_matrix - [N,N] matrix of floats output from the CNN model
 #Formats a valid response string that can be fed into gogui as response to the 'predict_ownership' command
@@ -54,16 +39,13 @@ def influence_str(ownership_matrix):
 
 def gtp_io():
     """ Main loop which communicates to gogui via GTP"""
-    known_commands = ['boardsize', 'clear_board', 'komi', 'play', 'genmove',
+    known_commands = ['boardsize', 'clear_board', 'komi', 'play',
                       'final_score', 'quit', 'name', 'version', 'known_command',
                       'list_commands', 'protocol_version', 'gogui-analyze_commands']
-    analyze_commands = ["gfx/Predict Final Ownership/predict_ownership", 
-                        "none/Load New SGF/loadsgf"]
-    sgf_files = get_sgf_filelist(SGF_DIRECTORY)
-    sgf_file = random.choice(sgf_files)
-    driver = GoDriver(sgf_file, MODEL_PATH)
+    analyze_commands = ["gfx/Final Ownership/predict_ownership"]
+    driver = GoDriver(MODEL_PATH)
 
-    print("starting main.py: loading %s" %sgf_file,file=sys.stderr)
+    print("starting main.py", file=sys.stderr)
     output_file = open("output.txt", "wb")
     output_file.write("intializing\n")
     while True:
@@ -88,24 +70,18 @@ def gtp_io():
                 print("Warning: Trying to set incompatible boardsize %s (!= %d)"%(command[1], N), file=sys.stderr)
         elif command[0] == "clear_board":
             driver.reset_board()
-        elif command[0] == "loadsgf":
-            sgf_file = random.choice(sgf_files)
-            print("Loading new file: %s" %sgf_file, file=sys.stderr)
-            print("Make sure to click 'Clear board and start new game' in the gui", file=sys.stderr)
-            driver.load_sgf_file(sgf_file)
         elif command[0] == "komi":
             pass
         elif command[0] == "play":
+            color = command[1][0]
+            move = command[2]
+            if move != 'pass':
+                (row, col) = str_to_coord(move)
+                driver.play(color, (row, col))
+            else:
+                driver.play(color, move)                
             pass
             print("play", file=sys.stderr)
-        elif command[0] == "genmove":
-            #color_str = command[1] #currently we ignore this
-            tup = driver.gen_move()
-            if tup == "pass":
-                ret = "pass"
-            else:
-                ret = coord_to_str(tup[0],tup[1])
-            print("genmove", file=sys.stderr)
         elif command[0] == "final_score":
             print("final_score not implemented", file=sys.stderr)
         elif command[0] == "name":
