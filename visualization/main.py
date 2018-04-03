@@ -20,6 +20,7 @@ MODEL_PATH = "/home/tensorflow/src/GoCNN/data/working/board_eval_cnn_5layer.ckpt
 N = 19 #size of the board
 letter_coords = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T']
 
+
 #go from matrix index to board position string e.g. 0,2 -> A3
 def coord_to_str(row, col):
     row = (19-1) - row
@@ -34,10 +35,9 @@ def str_to_coord(coord):
 #Formats a valid response string that can be fed into gogui as response to the 'predict_ownership' command
 def influence_str(ownership_matrix):
     rtn_str = "INFLUENCE "
-    for i in xrange(len(ownership_matrix)):
-        for j in xrange(len(ownership_matrix)):
-            rtn_str+= "%s %.1lf " %(coord_to_str(i,j), 2*(ownership_matrix[i][j] - .5)) #convert to [-1,1] scale
-            #rtn_str+= " %.1lf\n" %(ownership_matrix[i][j])
+    for y in xrange(len(ownership_matrix)):
+        for x in xrange(len(ownership_matrix)):
+            rtn_str+= "%s %.1lf " %(coord_to_str(y,x), 2*(ownership_matrix[y][x] - .5)) #convert to [-1,1] scale
     return rtn_str
 
 def gtp_io():
@@ -45,7 +45,14 @@ def gtp_io():
     known_commands = ['boardsize', 'clear_board', 'komi', 'play',
                       'final_score', 'quit', 'name', 'version', 'known_command',
                       'list_commands', 'protocol_version', 'gogui-analyze_commands']
-    analyze_commands = ["gfx/Final Ownership/predict_ownership"]
+    analyze_commands = ["gfx/Final Ownership - No rotation/predict_ownership 0",
+                        "gfx/Final Ownership - Rotation 1/predict_ownership 1",
+                        "gfx/Final Ownership - Rotation 2/predict_ownership 2",
+                        "gfx/Final Ownership - Rotation 3/predict_ownership 3",
+                        "gfx/Final Ownership - Rotation 4/predict_ownership 4",
+                        "gfx/Final Ownership - Rotation 5/predict_ownership 5",
+                        "gfx/Final Ownership - Rotation 6/predict_ownership 6",
+                        "gfx/Final Ownership - Rotation 7/predict_ownership 7" ]
     driver = GoDriver(MODEL_PATH)
 
     print("starting main.py", file=sys.stderr)
@@ -90,7 +97,8 @@ def gtp_io():
         elif command[0] == "name":
             ret = 'board_evaluator'
         elif command[0] == "predict_ownership":
-            ownership_prediction = driver.evaluate_current_board()
+            rotation = int(command[1])
+            ownership_prediction = driver.evaluate_current_board(rotation)
             ret = influence_str(ownership_prediction)
         elif command[0] == "version":
             ret = '1.0'

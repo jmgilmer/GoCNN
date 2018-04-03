@@ -37,7 +37,7 @@ class GoDriver:
 
     #returns [19,19] matrix of floats indicating the probability black will own the territory at the end
     #of the game
-    def evaluate_current_board(self):
+    def evaluate_current_board(self, rotation):
         if self.board is None:
             return np.zeros((19,19))
-        return self.board_evaluator.evaluate_board(self.board, self.color_to_move)
+        return self.board_evaluator.evaluate_board(self.board, self.color_to_move, rotation)
